@@ -68,15 +68,22 @@ class RunDataApiRequestor():
         print(self.refresh_token)
         print(self.access_token)
 
-    def get_activites(self):
-        headers = {'Authorization': 'Bearer {}'.format(self.access_token)}
-        strava_get_activities_url = ("https://www.strava.com/api/v3/athlete/activities")
-        return self.get(strava_get_activities_url, headers=headers)
+    def get_and_save_activites(self):
+        filename = 'activities.txt'
+        with open(filename, 'r+') as f:
+            try:
+                return json.dumps(json.load(f))
+            except json.decoder.JSONDecodeError:
+                headers = {'Authorization': 'Bearer {}'.format(self.access_token)}
+                strava_get_activities_url = ("https://www.strava.com/api/v3/athlete/activities")
+                activities = self.get(strava_get_activities_url, headers=headers)
+                json.dump(activities, f, ensure_ascii=False, indent=4)
+                return json.dumps(activities)
 
 # http GET "https://www.strava.com/api/v3/activities/{id}?include_all_efforts=" "Authorization: Bearer [[token]]"
 # requestor = RunDataApiRequestor()
 # # requestor.do_strava_auth()
 # # requestor.do_strava_oauth()
-# requestor.get_activites()
+# requestor.get_and_save_activites()
 
 
