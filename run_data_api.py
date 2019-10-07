@@ -40,7 +40,6 @@ class RunDataApiRequestor():
                         self.strava_client_id, 
                         self.strava_callback_domain, 
                         self.strava_scope)
-        
         print("Please authorize at the following url: {}".format(strava_auth_url))
 
     def do_strava_oauth(self):
@@ -52,38 +51,32 @@ class RunDataApiRequestor():
                         self.strava_client_id, 
                         self.strava_client_secret, 
                         self.strava_code)
-
         json = self.post(strava_oAuth_url)
-        self.refresh_token = json["refresh_token"]
-        self.access_token = json["access_token"]
-        self.athlete_id = json["athlete"]["id"]
-
-        print(self.refresh_token)
-        print(self.access_token)
+        self.save_tokens(json)
 
     def refresh_access_token(self):
         strava_oAuth_url = ("https://www.strava.com/oauth/token?"
                     "refresh_token={}&"
                     "grant_type=refresh_token").format(self.refresh_token)
-
         json = self.post(strava_oAuth_url)
-        self.refresh_token = json["refresh_token"]
-        self.access_token = json["access_token"]
-        self.athlete_id = json["athlete"]["id"]
+        self.save_tokens(json)
 
+    def save_tokens(self, response):
+        self.refresh_token = response["refresh_token"]
+        self.access_token = response["access_token"]
+        self.athlete_id = response["athlete"]["id"]
         print(self.refresh_token)
         print(self.access_token)
 
     def get_activites(self):
         headers = {'Authorization': 'Bearer {}'.format(self.access_token)}
         strava_get_activities_url = ("https://www.strava.com/api/v3/athlete/activities")
-        response = self.get(strava_get_activities_url, headers=headers)
+        return self.get(strava_get_activities_url, headers=headers)
 
 # http GET "https://www.strava.com/api/v3/activities/{id}?include_all_efforts=" "Authorization: Bearer [[token]]"
-
-requestor = RunDataApiRequestor()
-# requestor.do_strava_auth()
-# requestor.do_strava_oauth()
-requestor.get_activites()
+# requestor = RunDataApiRequestor()
+# # requestor.do_strava_auth()
+# # requestor.do_strava_oauth()
+# requestor.get_activites()
 
 
