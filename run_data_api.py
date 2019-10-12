@@ -24,10 +24,10 @@ class RunDataApiRequestor():
         self.strava_callback_domain = "http://localhost"
         self.strava_scope= "activity:read_all,activity:write"
 
-        self.nike_access_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjYzMjdkOGU4LWNlNmMtNGI0MC1iYTdmLTRmYmI0OTM4Zjc4NnNpZyJ9.eyJ0cnVzdCI6MTAwLCJpYXQiOjE1NzA4NTkzOTAsImV4cCI6MTU3MDg2Mjk5MCwiaXNzIjoib2F1dGgyYWNjIiwianRpIjoiNmIwYTJmOTUtZGI2Ni00ZTk1LTkxZWEtZjE4MWJlNGQxNzg3IiwibGF0IjoxNTcwODU1NzIyLCJhdWQiOiJjb20ubmlrZS5kaWdpdGFsIiwic3ViIjoiY29tLm5pa2UuY29tbWVyY2UubmlrZWRvdGNvbS53ZWIiLCJzYnQiOiJuaWtlOmFwcCIsInNjcCI6WyJuaWtlLmRpZ2l0YWwiXSwicHJuIjoiOTU3MTQ5ODU4NiIsInBydCI6Im5pa2U6cGx1cyJ9.WnmBKUKj4Rt8STu1wMJmhfaHGTo-iQy6Sd4T3H0BaURr_hCzIO2WADabTIhUqYbdCHEoVCP0rmlrIdWCvUz6Whxj3uQ-sUB3AAZZUdhHxsSBUA0WoTuh8GUiWAc8OayAP-R4ORJN5chv2v1Q3mMNZh2Y5WG2yhQmLfgRt4S8azoNcPyAkaoePBkF-AXHPkyd_zTmUVsqgB58sRoxlDAVtSLX6SBNmx5IgsEyDZXYNm7I0qhncDfcyDMU7Azij0MIwYoZZQmoi0OvfOXTt0syGPSr17fo6--VPqqSJwHINXejH2cFIxdTkiuTKaY70s95GJBYp6Is_TLedK-5FBk_Ng"
+        self.nike_access_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjYzMjdkOGU4LWNlNmMtNGI0MC1iYTdmLTRmYmI0OTM4Zjc4NnNpZyJ9.eyJ0cnVzdCI6MTAwLCJpYXQiOjE1NzA5MTE1MzMsImV4cCI6MTU3MDkxNTEzMywiaXNzIjoib2F1dGgyYWNjIiwianRpIjoiYWM5NjA1ZjQtYmM2Yi00NzRkLThlMGUtMTI5NTgxODM0YjVhIiwibGF0IjoxNTcwODU1NzIyLCJhdWQiOiJjb20ubmlrZS5kaWdpdGFsIiwic3ViIjoiY29tLm5pa2UuY29tbWVyY2UubmlrZWRvdGNvbS53ZWIiLCJzYnQiOiJuaWtlOmFwcCIsInNjcCI6WyJuaWtlLmRpZ2l0YWwiXSwicHJuIjoiOTU3MTQ5ODU4NiIsInBydCI6Im5pa2U6cGx1cyJ9.E_3uMRbJCCoUaH0eV6MvlNp9YgA7tbTN4HwVxcKSIqN1lvxJgqd5LWf6OCDvCL4VXDeIVi2ZiIN6vLEaefM8HE0CfsD2sVqLpVgObdMZAv7tBMM7bxeZ88ZtsJcZQgU0He7jfXkettRLr8JPdWr1uD6HjV4mNwxf94Wa_jEzqdLwdHAv3OBc4rvBfWSXUgiRZIBseprjQOeTg4Zzk0FUaEzI2DwN_e8brIvB54Hfz5aBftwYFZAwTffwUszL65TNDmXdieQmFa3l_w_lInDgLhxDCOFIgjeq17uThgCSj-cuBHtCrPNm__6cUpUTJ3aWIt-ur8DpL_fDHWS9dY82pw"
 
     def get(self, url, headers = None, allow_redirects = False):
-        print("making a get to {} with {}".format(url, headers))
+        print("making a get to {} with {}".format(url, None))
         response = requests.get(url, headers=headers, allow_redirects=allow_redirects)
         if response.status_code == 200:
             return response.json()
@@ -81,8 +81,14 @@ class RunDataApiRequestor():
         print("Access token:" + self.strava_access_token)
         print("Refresh token:" + self.strava_refresh_token)
 
-    def get_and_save_activities(self, activity_type):        
-        activities = self.get_json_from_file(activity_type.name)
+    def get_activities(self, activity_type):  
+        if activity_type == ActivityType.STRAVA:
+            filename = f'{activity_type.name}_activity.txt'
+        elif activity_type == ActivityType.NIKE:
+            filename = f'{activity_type.name}_paginated_activity.txt'
+        
+        activities = self.get_json_from_file(filename)
+
         if activities == None:
             print(f"Fetching new activities for {activity_type}")
             if activity_type == ActivityType.STRAVA:
@@ -92,28 +98,57 @@ class RunDataApiRequestor():
             elif activity_type == ActivityType.NIKE:
                 headers = {'Authorization': 'Bearer {}'.format(self.nike_access_token)}
                 url = ("https://api.nike.com/sport/v3/me/activities/after_time/0")
-                activities = self.get(url, headers=headers)            
-            self.save_json_to_file(activity_type.name, activities)
+                first_page = self.get(url, headers=headers) 
+                activities = self.get_all_nike_pages(first_page)
+            self.save_json_to_file(filename, activities)
         else:
             print(f"Using cached activities for {activity_type}")
-        return json.dumps(activities)
+        return activities
     
-    def niki_paginate(self, activities):
-        if activities['paging']:
-            print('paging')
-            # url="https://api.nike.com/sport/v3/me/activities/after_id/${after_id}"
+    def get_nike_additional_metrics(self):
+        filename = "NIKE_detailed_activities.txt"
+        detailed_activities = self.get_json_from_file(filename)
+        if detailed_activities:
+            print('Fetching nike detailed activities from file')
+            return detailed_activities
+
+        print("Fetching nike detailed activities from API")
+        
+        activities = self.get_activities(ActivityType.NIKE)
+        nike_detailed_activities = []
+        for page in activities:
+            for activity in page['activities']:
+                activity_id = activity['id']
+                headers = {'Authorization': 'Bearer {}'.format(self.nike_access_token)}
+                url = f"https://api.nike.com/sport/v3/me/activity/{activity_id}?metrics=ALL"
+                detailed_activity = self.get(url, headers=headers)
+                nike_detailed_activities.append(detailed_activity)
+        self.save_json_to_file("NIKE_detailed_activities.txt", nike_detailed_activities)
+
+    def get_all_nike_pages(self, first_page):
+        pages = [first_page]
+        this_page = pages[0]
+        while(True):
+            if 'paging' in this_page and 'after_id' in this_page['paging']:
+                headers = {'Authorization': 'Bearer {}'.format(self.nike_access_token)}
+                after_id = this_page['paging']['after_id']
+                url=f"https://api.nike.com/sport/v3/me/activities/after_id/{after_id}"
+                new_page = self.get(url, headers=headers) 
+                pages.append(new_page)
+                this_page = new_page
+            else:
+                break
+        return pages
 
     def save_json_to_file(self, filename, json_to_save):
-        filename = f'{filename}_activity.txt'
         with open(filename, 'w+') as f:
             json.dump(json_to_save, f, ensure_ascii=False, indent=4)
 
     def get_json_from_file(self, filename):
-        filename = f'{filename}_activity.txt'
         Path(filename).touch(exist_ok=True)
         with open(filename, 'r+') as f:
             try:
-                return json.dumps(json.load(f))
+                return json.load(f)
             except json.decoder.JSONDecodeError:
                 print("Nothing in the file")
                 return None
@@ -134,5 +169,6 @@ requestor = RunDataApiRequestor()
 # requestor.do_strava_auth()
 # requestor.do_strava_oauth()
 # requestor.get_and_save_activities(ActivityType.STRAVA)
-activities = requestor.get_and_save_activities(ActivityType.NIKE)
-requestor.niki_paginate(activities)
+# activities = requestor.get_and_save_activities(ActivityType.NIKE)
+
+requestor.get_nike_additional_metrics()
