@@ -8,14 +8,14 @@ class ActivityType(Enum):
     NIKE = "nike"
     APPLE = "apple"
 
-class RunDataApiRequestor():
+class RunDataRequestor():
 
     def __init__(self):
 
         self.strava_code="640bc0d5307f42a8ca73ec115b0f6ea51bad1a7b"
 
         self.strava_refresh_token = "1c6e10fadf51ddfbe7ab0512d901f408a96d4ceb"
-        self.strava_access_token =  "6fe6e50a8194efdd78e0229269b466f6a8786350"
+        self.strava_access_token =  "2476ff395ab3a850a94acb8b8d1ea0c593182d8d"
        
         self.strava_athlete_id = "6473758"
         self.strava_client_id = "17083"
@@ -26,13 +26,16 @@ class RunDataApiRequestor():
 
         self.nike_access_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjYzMjdkOGU4LWNlNmMtNGI0MC1iYTdmLTRmYmI0OTM4Zjc4NnNpZyJ9.eyJ0cnVzdCI6MTAwLCJpYXQiOjE1NzA5MTE1MzMsImV4cCI6MTU3MDkxNTEzMywiaXNzIjoib2F1dGgyYWNjIiwianRpIjoiYWM5NjA1ZjQtYmM2Yi00NzRkLThlMGUtMTI5NTgxODM0YjVhIiwibGF0IjoxNTcwODU1NzIyLCJhdWQiOiJjb20ubmlrZS5kaWdpdGFsIiwic3ViIjoiY29tLm5pa2UuY29tbWVyY2UubmlrZWRvdGNvbS53ZWIiLCJzYnQiOiJuaWtlOmFwcCIsInNjcCI6WyJuaWtlLmRpZ2l0YWwiXSwicHJuIjoiOTU3MTQ5ODU4NiIsInBydCI6Im5pa2U6cGx1cyJ9.E_3uMRbJCCoUaH0eV6MvlNp9YgA7tbTN4HwVxcKSIqN1lvxJgqd5LWf6OCDvCL4VXDeIVi2ZiIN6vLEaefM8HE0CfsD2sVqLpVgObdMZAv7tBMM7bxeZ88ZtsJcZQgU0He7jfXkettRLr8JPdWr1uD6HjV4mNwxf94Wa_jEzqdLwdHAv3OBc4rvBfWSXUgiRZIBseprjQOeTg4Zzk0FUaEzI2DwN_e8brIvB54Hfz5aBftwYFZAwTffwUszL65TNDmXdieQmFa3l_w_lInDgLhxDCOFIgjeq17uThgCSj-cuBHtCrPNm__6cUpUTJ3aWIt-ur8DpL_fDHWS9dY82pw"
 
-    def get(self, url, headers = None, allow_redirects = False):
-        print("making a get to {} with {}".format(url, None))
-        response = requests.get(url, headers=headers, allow_redirects=allow_redirects)
+    def get(self, url, allow_redirects = False, params = None, bearer_token = None):
+        if bearer_token:
+            headers = {'Authorization': 'Bearer {}'.format(bearer_token)}
+
+        print("making a GET to {} with headers {} params {}".format(url, headers, params))
+        response = requests.get(url, headers=headers, allow_redirects=allow_redirects, params=params)
         if response.status_code == 200:
             return response.json()
         else:
-            raise Exception("bad response from post {}".format(response.status_code))
+            raise Exception("bad response from GET {}".format(response.status_code))
 
     def post(self, url, payload = None):
         print("making a post to " + url)
@@ -78,35 +81,32 @@ class RunDataApiRequestor():
         self.strava_access_token = response["access_token"]
         self.strava_athlete_id = response["athlete"]["id"]
         print("Save these tokens...")
-        print("Access token:" + self.strava_access_token)
-        print("Refresh token:" + self.strava_refresh_token)
+        print("Access token: " + self.strava_access_token)
+        print("Refresh token: " + self.strava_refresh_token)
 
     def get_activities(self, activity_type):  
         if activity_type == ActivityType.STRAVA:
-            filename = f'{activity_type.name}_activity.txt'
+            filename = 'data/STRAVA_paginated_activity.txt'
         elif activity_type == ActivityType.NIKE:
-            filename = f'{activity_type.name}_paginated_activity.txt'
+            filename = 'data/NIKE_paginated_activity.txt'
         
         activities = self.get_json_from_file(filename)
 
-        if activities == None:
+        if activities:
+            print(f"Using cached activities for {activity_type}")
+        else:
             print(f"Fetching new activities for {activity_type}")
             if activity_type == ActivityType.STRAVA:
-                headers = {'Authorization': 'Bearer {}'.format(self.strava_access_token)}
-                url = ("https://www.strava.com/api/v3/athlete/activities")
-                activities = self.get(url, headers=headers)
+                activities = self.get_all_strava_pages()
             elif activity_type == ActivityType.NIKE:
-                headers = {'Authorization': 'Bearer {}'.format(self.nike_access_token)}
                 url = ("https://api.nike.com/sport/v3/me/activities/after_time/0")
-                first_page = self.get(url, headers=headers) 
-                activities = self.get_all_nike_pages(first_page)
+                first_page = self.get(url, bearer_token=self.nike_access_token) 
+                activities = self.get_all_subsequent_nike_pages(first_page)
             self.save_json_to_file(filename, activities)
-        else:
-            print(f"Using cached activities for {activity_type}")
         return activities
     
     def get_nike_additional_metrics(self):
-        filename = "NIKE_detailed_activities.txt"
+        filename = "data/NIKE_detailed_activities.txt"
         detailed_activities = self.get_json_from_file(filename)
         if detailed_activities:
             print('Fetching nike detailed activities from file')
@@ -119,21 +119,32 @@ class RunDataApiRequestor():
         for page in activities:
             for activity in page['activities']:
                 activity_id = activity['id']
-                headers = {'Authorization': 'Bearer {}'.format(self.nike_access_token)}
                 url = f"https://api.nike.com/sport/v3/me/activity/{activity_id}?metrics=ALL"
-                detailed_activity = self.get(url, headers=headers)
+                detailed_activity = self.get(url, bearer_token=self.nike_access_token)
                 nike_detailed_activities.append(detailed_activity)
         self.save_json_to_file("NIKE_detailed_activities.txt", nike_detailed_activities)
 
-    def get_all_nike_pages(self, first_page):
+    def get_all_strava_pages(self):            
+        url = ("https://www.strava.com/api/v3/athlete/activities")
+        params = {'page': 0}
+        all_pages = []
+        while (True):
+            this_page = self.get(url, bearer_token=self.strava_access_token, params=params)
+            if (len(this_page) == 0):
+                print('Fetched {} pages from strava'.format(params['page']))
+                break
+            all_pages.append(this_page)
+            params['page'] += 1
+        return all_pages
+
+    def get_all_subsequent_nike_pages(self, first_page):
         pages = [first_page]
         this_page = pages[0]
         while(True):
             if 'paging' in this_page and 'after_id' in this_page['paging']:
-                headers = {'Authorization': 'Bearer {}'.format(self.nike_access_token)}
                 after_id = this_page['paging']['after_id']
                 url=f"https://api.nike.com/sport/v3/me/activities/after_id/{after_id}"
-                new_page = self.get(url, headers=headers) 
+                new_page = self.get(url, bearer_token=self.nike_access_token) 
                 pages.append(new_page)
                 this_page = new_page
             else:
@@ -165,10 +176,11 @@ class RunDataApiRequestor():
 
 
 # http GET "https://www.strava.com/api/v3/activities/{id}?include_all_efforts=" "Authorization: Bearer [[token]]"
-requestor = RunDataApiRequestor()
+requestor = RunDataRequestor()
 # requestor.do_strava_auth()
 # requestor.do_strava_oauth()
+requestor.get_activities(ActivityType.STRAVA)
 # requestor.get_and_save_activities(ActivityType.STRAVA)
 # activities = requestor.get_and_save_activities(ActivityType.NIKE)
 
-requestor.get_nike_additional_metrics()
+# requestor.get_nike_additional_metrics()

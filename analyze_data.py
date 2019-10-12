@@ -1,4 +1,4 @@
-from run_data_api import RunDataApiRequestor, ActivityType
+from run_data_api import RunDataRequestor, ActivityType
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
@@ -11,8 +11,8 @@ import matplotlib.dates as mdates
 # pd.set_option('display.max_colwidth', 500)
 # pd.set_option('expand_frame_repr', True)
 
-def analyze_nike():
-    requestor = RunDataApiRequestor()
+def get_nike_total_distance():
+    requestor = RunDataRequestor()
     nike_activities = requestor.get_activities(ActivityType.NIKE)
     total_running_distance = 0
     total_runs = 0
@@ -41,8 +41,8 @@ def compare(row):
     return row
 
 def do_data_science():
-    requestor = RunDataApiRequestor()
-    activities = requestor.get_and_save_activites(ActivityType.STRAVA)
+    requestor = RunDataRequestor()
+    activities = requestor.get_activities(ActivityType.STRAVA)
 
     df = pd.read_json(activities)
 
@@ -72,8 +72,9 @@ def do_data_science():
 
 def tag_duplicates_in_numpy(df):
     numps = df.head(1).to_numpy(copy=False)
-    for i, val in enumerate(numps):
-        print(numps[i])
+    print(numps)
+    # for i, val in enumerate(numps):
+    #     print(numps[i])
         # if i != 0:
             # prev_distance = numps[i-1]["distance_in_km"]
             # this_distance = numps[i]["distance_in_km"]
@@ -83,7 +84,6 @@ def tag_duplicates_in_numpy(df):
             #     print("Found a duplicate!")
             #     numps[i]["duplicate"] = True
             #     numps[i-1]["duplicate"] = True
-
 
 # compare stuff
     # print(df.head(4))
@@ -99,4 +99,4 @@ def tag_duplicates_in_numpy(df):
             #     df.iloc[i]["duplicate"] = True
             #     df.iloc[i-1]["duplicate"] = True
 
-analyze_nike()
+get_nike_total_distance()
