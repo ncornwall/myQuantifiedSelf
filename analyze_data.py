@@ -13,7 +13,7 @@ import matplotlib.dates as mdates
 
 def get_nike_total_distance():
     requestor = RunDataRequestor()
-    nike_activities = requestor.get_activities(ActivityType.NIKE)
+    nike_activities = requestor.get_json_activities(ActivityType.NIKE)
     total_running_distance = 0
     total_runs = 0
     for page in nike_activities:
@@ -42,7 +42,7 @@ def compare(row):
 
 def do_data_science():
     requestor = RunDataRequestor()
-    activities = requestor.get_activities(ActivityType.STRAVA)
+    activities = requestor.get_json_activities(ActivityType.STRAVA)
 
     df = pd.read_json(activities)
 
