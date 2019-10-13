@@ -6,10 +6,11 @@ import itertools
 import pytz
 from functools import reduce
 import pandas as pd
+import numpy as np
 
 requestor = JsonRunDataRequestor()
 
-def merge_strava_nike_data():
+def merge_strava_nike_apple_data():
     strava_data = requestor.get_json_activities(ActivityType.STRAVA)
 
     merged_activity = []
@@ -34,7 +35,17 @@ def merge_strava_nike_data():
                 break
         merged_activity.append(Activity(id, start_time, distance_in_km, ActivityType.NIKE, activity))
 
+    apple_data = load_apple_workouts()
+
+    for workout in apple_data:
+        print('a')
+
     return merged_activity
+
+def load_apple_workouts():
+    workouts_filepath = 'data/apple_health_export_csv/Workout.csv'
+    myFile = pd.read_csv(workouts_filepath, sep=',')
+    return []
 
 def remove_duplicates(activities):
     before_len = len(activities)
@@ -52,7 +63,7 @@ def calc_total_distance_run(activities):
     print(f"Total distance run: {sum}")
 
 def main():
-    activities = merge_strava_nike_data()
+    activities = merge_strava_nike_apple_data()
     remove_duplicates(activities)
     calc_total_distance_run(activities)
 
