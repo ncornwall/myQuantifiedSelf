@@ -36,16 +36,17 @@ def merge_strava_nike_apple_data():
         merged_activity.append(Activity(id, start_time, distance_in_km, ActivityType.NIKE, activity))
 
     apple_data = load_apple_workouts()
-
-    for workout in apple_data:
-        print('a')
-
+    filtered_apple_data = apple_data[(apple_data.workoutActivityType == "HKWorkoutActivityTypeRunning") & (apple_data.sourceName == "Natalia's Apple Watch")]
+    filtered_apple_data.apply(lambda x:  merged_activity.append(Activity(None, 
+                parse(x.startDate, tzinfos={"America/Vancouver"}),
+                x.totalDistance, 
+                ActivityType.APPLE, None)), axis=1)
     return merged_activity
 
 def load_apple_workouts():
+    print("Getting csv data for apple data")
     workouts_filepath = 'data/apple_health_export_csv/Workout.csv'
-    myFile = pd.read_csv(workouts_filepath, sep=',')
-    return []
+    return pd.read_csv(workouts_filepath, sep=',')
 
 def remove_duplicates(activities):
     before_len = len(activities)
