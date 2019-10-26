@@ -1,8 +1,22 @@
-from run_data_api import RunDataRequestor, ActivityType
+from run_data_api import RunDataRequestor
+from activity_enums import ActivityType, ActivitySource
 import pandas as pd
 import json
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+
+from activity_enums import ActivitySource, ActivityType
+
+import json
+import itertools
+
+from datetime import datetime
+from dateutil.parser import parse
+import pytz
+
+from pandas.io.json import json_normalize
+import pandas as pd
+
 
 # environment settings: 
 # pd.set_option('display.max_column',None)
@@ -10,6 +24,43 @@ import matplotlib.dates as mdates
 # pd.set_option('display.max_seq_items',None)
 # pd.set_option('display.max_colwidth', 500)
 # pd.set_option('expand_frame_repr', True)
+
+#  RANDOM UNUSED STUFF
+
+def merge_strava_nike_apple_data(self):
+
+    merged_activity = []
+
+    strava_data = self.requestor.get_json_activities(ActivitySource.STRAVA)
+
+    for activity in strava_data:
+        if activity['type'] == "Run":
+            id = activity['id']
+            start_time = parse(activity['start_date_local'], tzinfos={"America/Vancouver"})
+            distance_in_km = activity['distance'] / 1000
+            merged_activity.append(Activity(id, start_time, distance_in_km, ActivitySource.STRAVA, activity))
+
+    nike_data = self.requestor.get_json_activities(ActivitySource.NIKE)
+
+    for activity in nike_data:
+        id = activity['id']
+        start_time = datetime.fromtimestamp(activity['start_epoch_ms'] / 1000, pytz.timezone('America/Vancouver'))
+        distance_in_km = None
+        summaries = activity['summaries']
+        for summary in summaries:
+            if summary['metric'] == "distance":
+                distance_in_km = summary['value']
+                break
+        merged_activity.append(Activity(id, start_time, distance_in_km, ActivitySource.NIKE, activity))
+
+    apple_data = self.load_apple_workouts()
+    filtered_apple_data = apple_data[(apple_data.workoutActivityType == "HKWorkoutActivityTypeRunning") & (apple_data.sourceName == "Natalia's Apple Watch")]
+    filtered_apple_data.apply(lambda x:  merged_activity.append(Activity(None, 
+                parse(x.startDate, tzinfos={"America/Vancouver"}),
+                x.totalDistance, 
+                ActivitySource.APPLE, None)), axis=1)
+    return merged_activity
+
 
 def get_nike_total_distance():
     requestor = RunDataRequestor()
@@ -100,3 +151,18 @@ def tag_duplicates_in_numpy(df):
             #     df.iloc[i-1]["duplicate"] = True
 
 get_nike_total_distance()
+
+class Activity():
+    def __init__(self, id, start_time, distance, source, properties):
+        self.id = id
+        self.distance = distance
+        self.start_time = start_time
+        self.source = source
+        self.properties = properties
+    
+    # def __hash__(self):
+    #     return hash((self.id, self.distance, self.start_time))
+    
+    def isDuplicate(self, other):
+        return (abs(self.distance - other.distance) < 1 and 
+            abs((self.start_time - other.start_time).total_seconds()) < 600)

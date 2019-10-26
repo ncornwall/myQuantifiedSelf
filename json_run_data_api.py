@@ -1,16 +1,12 @@
 import requests
 import json
-from enum import Enum
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import pandas as pd
 import xml.etree.ElementTree
 import webbrowser
 
-class ActivitySource(Enum):
-    STRAVA = "strava"
-    NIKE = "nike"
-    APPLE = "apple"
+from activity_enums import ActivitySource
 
 class JsonRunDataRequestor():
 
