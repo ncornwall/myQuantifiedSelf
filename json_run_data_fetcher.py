@@ -8,7 +8,7 @@ import webbrowser
 
 from activity_enums import ActivitySource
 
-class JsonRunDataRequestor():
+class JsonRunDataFetcher():
 
     def __init__(self):
 
@@ -32,7 +32,7 @@ class JsonRunDataRequestor():
         if (self.strava_athlete_id == None 
             or self.strava_access_token == None 
             or self.strava_refresh_token == None):
-            requestor.do_strava_oauth()
+            self.do_strava_oauth()
 
     def get(self, url, allow_redirects = False, params = None, bearer_token = None):
         headers=None
@@ -170,8 +170,7 @@ class JsonRunDataRequestor():
                 print("Nothing in the file")
                 return None
             
-requestor = JsonRunDataRequestor()
-
+# requestor = JsonRunDataRequestor()
 # requestor.do_strava_oauth()
 # requestor.get_activities(ActivityType.STRAVA)
 # requestor.get_and_save_activities(ActivityType.STRAVA)

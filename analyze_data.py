@@ -1,4 +1,5 @@
-from run_data_api import RunDataRequestor
+from json_run_data_fetcher import JsonRunDataRequestor
+
 from activity_enums import ActivityType, ActivitySource
 import pandas as pd
 import json
@@ -63,8 +64,8 @@ def merge_strava_nike_apple_data(self):
 
 
 def get_nike_total_distance():
-    requestor = RunDataRequestor()
-    nike_activities = requestor.get_json_activities(ActivityType.NIKE)
+    requestor = JsonRunDataRequestor()
+    nike_activities = requestor.get_json_activities(ActivitySource.NIKE)
     total_running_distance = 0
     total_runs = 0
     for page in nike_activities:
@@ -92,8 +93,8 @@ def compare(row):
     return row
 
 def do_data_science():
-    requestor = RunDataRequestor()
-    activities = requestor.get_json_activities(ActivityType.STRAVA)
+    requestor = JsonRunDataRequestor()
+    activities = requestor.get_json_activities(ActivitySource.STRAVA)
 
     df = pd.read_json(activities)
 
