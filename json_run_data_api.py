@@ -7,7 +7,7 @@ import pandas as pd
 import xml.etree.ElementTree
 import webbrowser
 
-class ActivityType(Enum):
+class ActivitySource(Enum):
     STRAVA = "strava"
     NIKE = "nike"
     APPLE = "apple"
@@ -95,9 +95,9 @@ class JsonRunDataRequestor():
         print(f"Athlete id: {self.strava_athlete_id}")
 
     def get_json_activities(self, activity_type):  
-        if activity_type == ActivityType.STRAVA:
+        if activity_type == ActivitySource.STRAVA:
             filename = 'data/STRAVA_paginated_activity.txt'
-        elif activity_type == ActivityType.NIKE:
+        elif activity_type == ActivitySource.NIKE:
             filename = 'data/NIKE_paginated_activity_single_list.txt'
         
         activities = self.get_json_from_file(filename)
@@ -106,9 +106,9 @@ class JsonRunDataRequestor():
             print(f"Using cached activities for {activity_type}")
         else:
             print(f"Fetching new activities for {activity_type}")
-            if activity_type == ActivityType.STRAVA:
+            if activity_type == ActivitySource.STRAVA:
                 activities = self.get_all_strava_pages()
-            elif activity_type == ActivityType.NIKE:
+            elif activity_type == ActivitySource.NIKE:
                 url = ("https://api.nike.com/sport/v3/me/activities/after_time/0")
                 first_page = self.get(url, bearer_token=self.nike_access_token)
                 activities = self.get_all_subsequent_nike_pages(first_page)
@@ -124,7 +124,7 @@ class JsonRunDataRequestor():
 
         print("Fetching nike detailed activities from API")
         
-        activities = self.get_json_activities(ActivityType.NIKE)
+        activities = self.get_json_activities(ActivitySource.NIKE)
         nike_detailed_activities = []
         for activity in activities:
             activity_id = activity['id']
