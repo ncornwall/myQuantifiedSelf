@@ -1,4 +1,4 @@
-from json_run_data_fetcher import JsonRunDataFetcher
+from run_data_json_fetcher import RunDataJsonFetcher
 from run_data_cleaner import RunDataCleaner
 from run_data_analyzer import RunDataAnalyzer
 from run_data_vizualizer import RunDataVisualizer
@@ -23,10 +23,10 @@ def main():
 
     except FileNotFoundError:
 
-        # Data frame is not available, run the data pipeline
+        # Data frame is not available from file, run the data pipeline
 
         # fetcher to get data from strava and nike APIs
-        fetcher = JsonRunDataFetcher()
+        fetcher = RunDataJsonFetcher()
 
         # merge the data from APIs + data from apple health app
         # and remove duplicate run data

@@ -8,7 +8,7 @@ import webbrowser
 
 from activity_enums import ActivitySource
 
-class JsonRunDataFetcher():
+class RunDataJsonFetcher():
     """
     Fetches data from Strava and Nike APIs
     Strava APIs require a strava_client_id, strava_client_secret, and strava_code
