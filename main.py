@@ -46,6 +46,7 @@ def main():
     analyzer.get_summary_stats_by_type_and_source()
     analyzer.get_running_stats()
 
+    # make some fun charts
     visualizer = RunDataVisualizer(df)
     # visualizer.visualize_bikes_by_year()
     # visualizer.visualize_runs_by_year_and_source()

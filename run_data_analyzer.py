@@ -3,7 +3,7 @@ from activity_enums import ActivitySource, ActivityType
 class RunDataAnalyzer:
     """
     The analysis stage of the data pipeline
-    Does some interesting calculations on the data
+    Does some interesting calculations on the data and prints results
     """
 
     def __init__(self, activities):

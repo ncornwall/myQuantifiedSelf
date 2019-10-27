@@ -98,21 +98,25 @@ class JsonRunDataFetcher():
         print("Refresh token: " + self.strava_refresh_token)
         print(f"Athlete id: {self.strava_athlete_id}")
 
-    def get_json_activities(self, activity_type):  
-        if activity_type == ActivitySource.STRAVA:
+    def get_json_activities(self, activity_source): 
+        """
+        Fetch all activities for a given data source, either from a file if it exists or from API
+        """
+
+        if activity_source == ActivitySource.STRAVA:
             filename = 'data/STRAVA_paginated_activity.txt'
-        elif activity_type == ActivitySource.NIKE:
+        elif activity_source == ActivitySource.NIKE:
             filename = 'data/NIKE_paginated_activity_single_list.txt'
         
         activities = self.get_json_from_file(filename)
 
         if activities:
-            print(f"Using cached activities for {activity_type}")
+            print(f"Using cached activities for {activity_source}")
         else:
-            print(f"Fetching new activities for {activity_type}")
-            if activity_type == ActivitySource.STRAVA:
+            print(f"Fetching new activities for {activity_source}")
+            if activity_source == ActivitySource.STRAVA:
                 activities = self.get_all_strava_pages()
-            elif activity_type == ActivitySource.NIKE:
+            elif activity_source == ActivitySource.NIKE:
                 url = ("https://api.nike.com/sport/v3/me/activities/after_time/0")
                 first_page = self.get(url, bearer_token=self.nike_access_token)
                 activities = self.get_all_subsequent_nike_pages(first_page)
@@ -121,9 +125,9 @@ class JsonRunDataFetcher():
     
     def get_nike_additional_metrics(self):
         """
-            # Not using this additional data for anything
-            # But it seems interesting to fetch from the API
-            # While you're hacking Nike
+            Not using this detailed nike data for anything
+            But it seems interesting to fetch from the API
+            While you're hacking Nike
         """
         filename = "data/NIKE_detailed_activities.txt"
         detailed_activities = self.get_json_from_file(filename)
@@ -142,7 +146,11 @@ class JsonRunDataFetcher():
             nike_detailed_activities.append(detailed_activity)
         self.save_json_to_file("NIKE_detailed_activities.txt", nike_detailed_activities)
 
-    def get_all_strava_pages(self):            
+    def get_all_strava_pages(self):
+        """
+        Fetches paginated data from strava and merges the pages into a single list
+        """
+
         url = ("https://www.strava.com/api/v3/athlete/activities")
         params = {'page': 1}
         all_pages = []
@@ -156,6 +164,10 @@ class JsonRunDataFetcher():
         return all_pages
 
     def get_all_subsequent_nike_pages(self, first_page):
+        """
+        Fetches paginated data from nike and merges the pages into a single list
+        """
+
         all_items = []
         all_items.extend(first_page['activities'])
         this_page = first_page

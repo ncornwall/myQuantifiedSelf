@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Source: https://github.com/markwk/qs_ledger/blob/master/apple_health/apple-health-data-parser.py
+
+Parses out CSV files from apple health data generated from a bulk XML export from apple health kit
+
 applehealthdata.py: Extract data from Apple Health App's export.xml.
 Copyright (c) 2016 Nicholas J. Radcliffe
 Licence: MIT
