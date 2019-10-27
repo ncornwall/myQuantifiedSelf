@@ -1,5 +1,7 @@
 This is a little project for analysing running data. It will merge data from Nike, Strava, and Apple Watch, remove duplicates, and generate some interesting insights from the merged data.
 
+Clone the project, do a `make init` and then run main.py.
+
 # Authorize Strava
 
 Go to your Strava account: https://www.strava.com/settings/api
