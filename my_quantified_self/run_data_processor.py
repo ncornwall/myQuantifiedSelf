@@ -72,6 +72,8 @@ class RunDataProcessor:
             return ActivityType.OTHER
 
     def add_strava_data_to_activities(self):
+        """Let's fetch Strava data and add all the activies to our data frame.
+        """
         
         try:
             logging.info("Parsing Strava data and getting it ready for analysis.")
@@ -113,6 +115,8 @@ class RunDataProcessor:
             logging.exception("Could not parse Strava data")
 
     def add_nike_data_to_activities(self):
+        """Fetch Nike data and all the activities to our data frame.
+        """
 
         try:
             logging.info("Parsing Nike data and getting it ready for analysis.")
@@ -149,6 +153,8 @@ class RunDataProcessor:
             logging.exception("Could not parse Nike data")
 
     def add_apple_data_to_activities(self):
+        """Fetch Apple Health Kit data and add all the activities to our data frame.
+        """
 
         try:
             # apple data is loaded from csv rather than from json
@@ -180,7 +186,7 @@ class RunDataProcessor:
 
     def isDuplicate(self, a, b):
         """
-        check for duplicates based on close runs are in distance and time
+        check for duplicates based on how close runs are in distance and time
         removing timezones for the timestamp comparison
         """
 

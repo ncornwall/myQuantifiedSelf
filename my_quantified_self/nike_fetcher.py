@@ -3,7 +3,7 @@ import logging
 import os
 from dotenv import load_dotenv
 import logging
-from utils import get, post, get_json_from_file, save_json_to_file
+from utils import get, post, get_json_from_file, save_json_to_file, isBlank
 
 class NikeFetcher():
     """
@@ -20,13 +20,22 @@ class NikeFetcher():
         self.additional_activities_filename = "data/NIKE_detailed_activities.txt"
 
     def fetch_nike_activities(self, refresh_cache=False):
+        """Fetches all Nike activities. If they are saved in a JSON file, it will use that as the source,
+        otherwise will fetch all activities from the API.
+
+        Args:
+            refresh_cache (bool, optional): Will force a refresh of the data in saved JSON files. Defaults to False.
+        """
         activities = get_json_from_file(self.dir, self.activities_filename)
         if activities and not refresh_cache:
             logging.info(f"Using cached activities for Nike data")
             return activities
-
+        
         logging.info(f"Fetching new activities for Nike data")
         try:
+            if isBlank(self.nike_access_token):
+                raise Exception("Please provide a Nike token in order to fetch Nike data.")
+
             url = ("https://api.nike.com/sport/v3/me/activities/after_time/0")
             first_page = get(url, bearer_token=self.nike_access_token)
             activities = self.get_all_subsequent_nike_pages(first_page)
@@ -40,8 +49,7 @@ class NikeFetcher():
             logging.exception("Something went wrong, could not fetch Nike data")
 
     def get_all_subsequent_nike_pages(self, first_page):
-        """
-        Fetches paginated data from nike and merges the pages into a single list
+        """Fetches paginated data from nike and merges the pages into a single list
         """
         all_items = []
         all_items.extend(first_page['activities'])
@@ -59,9 +67,9 @@ class NikeFetcher():
 
     def get_nike_additional_metrics(self):
         """
-            Not using this detailed nike data for anything
-            But it seems interesting to fetch from the API
-            While you're hacking Nike
+            Not using this detailed Nike data for anything.
+            But it seems interesting to fetch from the API.
+            While you're hacking the Nike walled garden.
         """
         detailed_activities = get_json_from_file(self.dir, self.additional_activities_filename)
         if detailed_activities:

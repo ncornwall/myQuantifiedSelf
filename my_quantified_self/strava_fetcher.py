@@ -31,7 +31,13 @@ class StravaFetcher():
         self.dir = "data/"
         self.activities_filename = 'data/STRAVA_activities.txt'
 
-    def fetch_strava_activities(self, refresh_cache=False):        
+    def fetch_strava_activities(self, refresh_cache=False):
+        """Fetches all Strava activities. If they are saved in a JSON file, it will use that as the source,
+        otherwise will fetch all activities from the API.
+
+        Args:
+            refresh_cache (bool, optional): Will force a refresh of the data in saved JSON files. Defaults to False.
+        """
         activities = get_json_from_file(self.dir, self.activities_filename)
 
         if activities and not refresh_cache:
@@ -48,16 +54,20 @@ class StravaFetcher():
             logging.exception("Something went wrong, could not fetch Strava data")
 
     def authorize_strava(self):
+        """Check the environment to see if we have all required tokens. 
+        If not not, let's do some oauth.
+        """
         if isBlank(self.strava_code):
             self.do_strava_oauth_authorization()
-        elif (isBlank(self.strava_athlete_id)
-            or isBlank(self.strava_access_token) 
+        elif (isBlank(self.strava_access_token) 
             or isBlank(self.strava_refresh_token)):
             self.do_strava_oauth_token_exchange()
         else:
             logging.info("Using Strava tokens from the environment.")
 
     def do_strava_oauth_authorization(self):
+        """Popup a browser window in order to Strava code from the user.
+        """
         strava_auth_url = ("https://www.strava.com/oauth/authorize?"
                     f"client_id={self.strava_client_id}&"
                     f"redirect_uri={self.strava_callback_domain}&"
@@ -68,6 +78,9 @@ class StravaFetcher():
         self.strava_code = input(("\n\nAfter authorization, you've been redirected to a url that looks like \n"
             "\"http://localhost/?state=&code=<YOUR STRAVA CODE HERE>&scope=read,activity:write,activity:read_all\"" 
             "\nI need the value from the 'code' query parameter. Please enter your Strava code now: "))
+
+        if isBlank(self.strava_code):
+            raise Exception("User was not able to provide valid Strava code.")
 
         logging.info("Save this to the .env file to skip this auth step in the future.")
         logging.info(f"STRAVA_CODE={self.strava_code}")
@@ -86,6 +99,9 @@ class StravaFetcher():
         self.strava_access_token = response["access_token"]
         self.strava_athlete_id = response["athlete"]["id"]
         self.strava_token_expiry = response["expires_at"]
+
+        if (isBlank(self.strava_access_token) or isBlank(self.strava_refresh_token)):
+            raise Exception("Could not parse Strava tokens, cannot fetch further Strava data.")
 
         logging.info("Save these tokens to the .env file to skip this auth step in the future.")
 
