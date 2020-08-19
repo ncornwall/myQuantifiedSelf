@@ -25,7 +25,7 @@ class StravaFetcher():
         self.strava_athlete_id = os.getenv("STRAVA_ATHLETE_ID")
         self.strava_token_expiry=None
 
-        self.strava_callback_domain = "http://localhost"
+        self.strava_callback_domain = os.getenv("STRAVA_CALLBACK", "http://localhost")
         self.strava_scope= "activity:read_all,activity:write"
         
         self.dir = "data/"
@@ -73,6 +73,10 @@ class StravaFetcher():
                     f"redirect_uri={self.strava_callback_domain}&"
                     "response_type=code&"
                     f"scope={self.strava_scope}")
+        print(
+            "I'm opening up a browser window. If you're running this from within a Docker container, "
+            "you'll need to open it yourself. \nPlease open the url:"
+            f"\n {strava_auth_url}")
         webbrowser.open_new(strava_auth_url)
         logging.info("Requesting strava code from the user")
         self.strava_code = input(("\n\nAfter authorization, you've been redirected to a url that looks like \n"

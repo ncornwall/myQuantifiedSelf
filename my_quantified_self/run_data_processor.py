@@ -78,7 +78,7 @@ class RunDataProcessor:
         try:
             logging.info("Parsing Strava data and getting it ready for analysis.")
 
-            strava_activities = self.strava_fetcher.fetch_strava_activities(True)
+            strava_activities = self.strava_fetcher.fetch_strava_activities()
             if strava_activities == None:
                 logging.info("No Strava data to add to all activities")
                 return

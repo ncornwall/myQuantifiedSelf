@@ -1,10 +1,12 @@
 FROM python:3
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY requirements.txt ./
-COPY my_quantified_self ./
-COPY .env ./
+RUN mkdir my_quantified_self
+
+COPY requirements.txt .
+COPY my_quantified_self /app/my_quantified_self
+COPY .env .
 
 RUN pip install --no-cache-dir -r requirements.txt
 

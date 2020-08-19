@@ -7,8 +7,9 @@ run:
 test:
 	pytest tests
 
+# interactive mode is important as we expect some user input
 docker-run:
-	docker run -t my_quantified_self:latest --detach=false
+	docker run -it my_quantified_self:latest
 
 docker-build:
 	docker build -t my_quantified_self:latest .
