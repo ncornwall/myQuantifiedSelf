@@ -1,3 +1,5 @@
+from strava_fetcher import StravaFetcher
+from nike_fetcher import NikeFetcher
 from activity_enums import ActivitySource, ActivityType
 
 import json
@@ -10,7 +12,9 @@ import pytz
 from pandas.io.json import json_normalize
 import pandas as pd
 
-class RunDataCleaner:
+import logging
+
+class RunDataProcessor:
     """
     Merges all data sources together and pulls out common fields
     Removes duplicate run data based on similarity
@@ -20,8 +24,9 @@ class RunDataCleaner:
     KM_SIMILARITY_THRESHOLD = 1
     SECONDS_SIMILARITY_THRESHOLD = 600
 
-    def __init__(self, requestor):
-        self.requestor = requestor
+    def __init__(self):
+        self.strava_fetcher = StravaFetcher()
+        self.nike_fetcher = NikeFetcher()
 
         self.data_frame_columns = ['start_timestamp', 
                             'duration_in_min', 
@@ -67,7 +72,13 @@ class RunDataCleaner:
             return ActivityType.OTHER
 
     def add_strava_data_to_activities(self):
-        strava_data = json.dumps(self.requestor.get_json_activities(ActivitySource.STRAVA))
+
+        strava_activities = self.strava_fetcher.fetch_strava_activities()
+        if strava_activities == None:
+            logging.info("No Strava data to add to all activities")
+            return
+
+        strava_data = json.dumps(strava_activities)
         
         # load strava data straight up from json, not doing any json normalization
         strava_df = pd.read_json(strava_data)
@@ -96,11 +107,16 @@ class RunDataCleaner:
 
     def add_nike_data_to_activities(self):  
 
+        nike_activities = self.nike_fetcher.fetch_nike_activities()
+        if nike_activities == None:
+            logging.info("No Nike data to add to all activities.")
+            return
+        
         # load Nike data, normalize the nested JSON
-        nike_df = json_normalize(self.requestor.get_json_activities(ActivitySource.NIKE))
+        nike_df = json_normalize(nike_activities)
 
         # merge in normalized summaries, joining by id
-        summaries = json_normalize(self.requestor.get_json_activities(ActivitySource.NIKE), record_path="summaries", record_prefix="summaries.", meta="id")
+        summaries = json_normalize(nike_df, record_path="summaries", record_prefix="summaries.", meta="id")
         summaries = summaries[summaries['summaries.metric'] == "distance"]
         nike_df = pd.merge(nike_df, summaries, how='inner', on='id')
 
@@ -139,7 +155,7 @@ class RunDataCleaner:
         self.all_activities = self.all_activities.append(apple_data, sort=True, ignore_index=True)
 
     def load_apple_workouts(self):
-        print("Getting csv data for apple data")
+        logging.info("Getting csv data for apple data")
         workouts_filepath = 'data/apple_health_export_csv/Workout.csv'
         return pd.read_csv(workouts_filepath, sep=',')
 
@@ -155,7 +171,7 @@ class RunDataCleaner:
             abs((a['start_timestamp'].tz_convert(None) - b['start_timestamp'].tz_convert(None)).total_seconds()) 
                 < RunDataCleaner.SECONDS_SIMILARITY_THRESHOLD)
         if isDuplicate:
-            print("A: {} : {} : {}\nB: {} : {} : {}\n".format(
+            logging.info("A: {} : {} : {}\nB: {} : {} : {}\n".format(
                 a['source'],
                 a['start_timestamp'],
                 a['distance_in_km'],
@@ -165,7 +181,7 @@ class RunDataCleaner:
         return isDuplicate
 
     def remove_duplicates(self):
-        print("Removing duplicates...")
+        logging.info("Removing duplicates...")
         all_activities = self.all_activities
         all_activities['duplicate'] = False
         before_len = len(all_activities)
@@ -175,4 +191,4 @@ class RunDataCleaner:
             if self.isDuplicate(all_activities.loc[a,:], all_activities.loc[b,:]):
                 all_activities.at[a, 'duplicate'] = True
         all_activities = all_activities[all_activities['duplicate']!= True]
-        print(f"Removed {before_len - len(all_activities)} duplicates")
+        logging.info(f"Removed {before_len - len(all_activities)} duplicates")

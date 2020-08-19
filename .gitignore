@@ -3,4 +3,4 @@ __pycache__
 __pycache__/
 data/
 .vscode/.ropeproject/*
-.vscode/*
+.vscode/
