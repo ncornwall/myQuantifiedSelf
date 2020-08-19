@@ -73,6 +73,8 @@ class RunDataProcessor:
 
     def add_strava_data_to_activities(self):
 
+        logging.info("Parsing Strava data and getting it ready for analysis.")
+
         strava_activities = self.strava_fetcher.fetch_strava_activities()
         if strava_activities == None:
             logging.info("No Strava data to add to all activities")
@@ -106,6 +108,8 @@ class RunDataProcessor:
         self.all_activities = self.all_activities.append(strava_df, sort=True)
 
     def add_nike_data_to_activities(self):  
+
+        logging.info("Parsing Nike data and getting it ready for analysis.")
 
         nike_activities = self.nike_fetcher.fetch_nike_activities()
         if nike_activities == None:
@@ -167,9 +171,9 @@ class RunDataProcessor:
 
         isDuplicate = (
             abs(a['distance_in_km'] - b['distance_in_km']) 
-                < RunDataCleaner.KM_SIMILARITY_THRESHOLD and 
+                < RunDataProcessor.KM_SIMILARITY_THRESHOLD and 
             abs((a['start_timestamp'].tz_convert(None) - b['start_timestamp'].tz_convert(None)).total_seconds()) 
-                < RunDataCleaner.SECONDS_SIMILARITY_THRESHOLD)
+                < RunDataProcessor.SECONDS_SIMILARITY_THRESHOLD)
         if isDuplicate:
             logging.info("A: {} : {} : {}\nB: {} : {} : {}\n".format(
                 a['source'],

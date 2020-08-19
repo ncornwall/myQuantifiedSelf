@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from run_data_cleaner import RunDataProcessor
+from run_data_processor import RunDataProcessor
 from run_data_analyzer import RunDataAnalyzer
 from run_data_vizualizer import RunDataVisualizer
 from activity_enums import ActivitySource

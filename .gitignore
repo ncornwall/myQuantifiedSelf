@@ -4,3 +4,5 @@ __pycache__/
 data/
 .vscode/.ropeproject/*
 .vscode/
+.pytest_cache
+__pycache__

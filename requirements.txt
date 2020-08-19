@@ -4,3 +4,4 @@ matplotlib
 xmltodict
 python-dotenv[cli]
 pylint
+pytest
