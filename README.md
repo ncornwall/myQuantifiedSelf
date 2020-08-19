@@ -1,6 +1,6 @@
 # My Quantified Self
 
-This is a little project for analyzing running data. It will merge data from Nike+, Strava, and Apple Watch, remove duplicates, and generate some interesting insights from the data. You 
+This is a little project for analyzing running data. It will merge data from Nike+, Strava, and Apple Watch, remove duplicates, and generate some interesting insights from the data. 
 
 # How to use this project
 
