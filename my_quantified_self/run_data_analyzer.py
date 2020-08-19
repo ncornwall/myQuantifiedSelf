@@ -15,8 +15,7 @@ class RunDataAnalyzer:
 
     def get_summary_stats_by_type_and_source(self):
         all_activities = self.activities
-        aggs = all_activities.groupby(['source', 'activity_type'])[
-            'distance_in_km'].sum()
+        aggs = all_activities.groupby(['source', 'activity_type'])['distance_in_km'].sum()
         sum = all_activities['distance_in_km'].sum()
         print(f'\nAll activities:\n {aggs} \n {sum}')
 

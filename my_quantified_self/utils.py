@@ -41,3 +41,6 @@ def get_json_from_file(dir, filename):
         except json.decoder.JSONDecodeError:
             logging.info("Nothing in the file")
             return None
+
+def isBlank (myString):
+    return not (myString and myString.strip())

@@ -1,7 +1,7 @@
 import logging
 import os
 from dotenv import load_dotenv
-from utils import get, post, get_json_from_file, save_json_to_file
+from utils import get, post, get_json_from_file, save_json_to_file, isBlank
 
 import webbrowser
 
@@ -48,13 +48,14 @@ class StravaFetcher():
             logging.exception("Something went wrong, could not fetch Strava data")
 
     def authorize_strava(self):
-        if self.strava_code == None:
+        if isBlank(self.strava_code):
             self.do_strava_oauth_authorization()
-
-        if (self.strava_athlete_id == None 
-            or self.strava_access_token == None 
-            or self.strava_refresh_token == None):
+        elif (isBlank(self.strava_athlete_id)
+            or isBlank(self.strava_access_token) 
+            or isBlank(self.strava_refresh_token)):
             self.do_strava_oauth_token_exchange()
+        else:
+            logging.info("Using Strava tokens from the environment.")
 
     def do_strava_oauth_authorization(self):
         strava_auth_url = ("https://www.strava.com/oauth/authorize?"
