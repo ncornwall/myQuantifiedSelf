@@ -36,6 +36,7 @@ Go to Apple Health and export a dump of your Health Kit data
 It will make a very large XML file. 
 Credit to the Quantified Self Ledger (https://github.com/markwk/qs_ledger) for help with the parsing of this file.
 Extract your running data from HealthKit by following the instructions in my_quantified_self/apple-health-data-parser.py
+Once you've extracted it to csv, place it in the following path: `data/apple_health_export_csv/Workout.csv`
 
 ## Data pipeline
 

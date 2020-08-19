@@ -8,11 +8,7 @@ test:
 	pytest tests
 
 docker-run:
-    docker build \
-      --file=./Dockerfile \
-      --tag=my_project ./
-    docker run \
-      --detach=false \
-      --name=my_project \
-      --publish=$(HOST):8080 \
-      my_project
+	docker run -t my_quantified_self:latest --detach=false
+
+docker-build:
+	docker build -t my_quantified_self:latest .

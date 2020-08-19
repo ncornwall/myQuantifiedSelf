@@ -72,91 +72,106 @@ class RunDataProcessor:
             return ActivityType.OTHER
 
     def add_strava_data_to_activities(self):
-
-        logging.info("Parsing Strava data and getting it ready for analysis.")
-
-        strava_activities = self.strava_fetcher.fetch_strava_activities()
-        if strava_activities == None:
-            logging.info("No Strava data to add to all activities")
-            return
-
-        strava_data = json.dumps(strava_activities)
         
-        # load strava data straight up from json, not doing any json normalization
-        strava_df = pd.read_json(strava_data)
-        strava_df = strava_df[['distance', 
-            'elapsed_time', 
-            'start_date_local', 
-            'location_city', 
-            'average_speed', 
-            'max_speed', 
-            'type']]
+        try:
+            logging.info("Parsing Strava data and getting it ready for analysis.")
 
-        # set up 5 key metrics
-        # note we're using the enum value
-        strava_df['activity_type'] = strava_df['type'].apply(lambda x: self.convert_strava_activity_type(x).value)
-        strava_df['source'] = ActivitySource.STRAVA.value
-        strava_df['start_timestamp'] = strava_df['start_date_local'].apply(lambda x: parse(x, tzinfos={"America/Vancouver"}))
-        # strava distances are in meters
-        strava_df['distance_in_km'] = strava_df['distance'].apply(lambda x: x / 1000)
-        strava_df['duration_in_min'] = strava_df['elapsed_time'].apply(lambda x: x / 60)
+            strava_activities = self.strava_fetcher.fetch_strava_activities(True)
+            if strava_activities == None:
+                logging.info("No Strava data to add to all activities")
+                return
 
-        #  filter out extraneous columns
-        strava_df = strava_df.filter(self.data_frame_columns)
+            strava_data = json.dumps(strava_activities)
+            
+            # load strava data straight up from json, not doing any json normalization
+            strava_df = pd.read_json(strava_data)
+            strava_df = strava_df[['distance', 
+                'elapsed_time', 
+                'start_date_local', 
+                'location_city', 
+                'average_speed', 
+                'max_speed', 
+                'type']]
 
-        #  add to activities
-        self.all_activities = self.all_activities.append(strava_df, sort=True)
+            # set up 5 key metrics
+            # note we're using the enum value
+            strava_df['activity_type'] = strava_df['type'].apply(lambda x: self.convert_strava_activity_type(x).value)
+            strava_df['source'] = ActivitySource.STRAVA.value
+            strava_df['start_timestamp'] = strava_df['start_date_local'].apply(lambda x: parse(x, tzinfos={"America/Vancouver"}))
+            # strava distances are in meters
+            strava_df['distance_in_km'] = strava_df['distance'].apply(lambda x: x / 1000)
+            strava_df['duration_in_min'] = strava_df['elapsed_time'].apply(lambda x: x / 60)
 
-    def add_nike_data_to_activities(self):  
+            #  filter out extraneous columns
+            strava_df = strava_df.filter(self.data_frame_columns)
 
-        logging.info("Parsing Nike data and getting it ready for analysis.")
+            #  add to activities
+            self.all_activities = self.all_activities.append(strava_df, sort=True)
 
-        nike_activities = self.nike_fetcher.fetch_nike_activities()
-        if nike_activities == None:
-            logging.info("No Nike data to add to all activities.")
-            return
-        
-        # load Nike data, normalize the nested JSON
-        nike_df = json_normalize(nike_activities)
+            logging.info("Done parsing Strava data.")
+        except Exception:
+            logging.exception("Could not parse Strava data")
 
-        # merge in normalized summaries, joining by id
-        summaries = json_normalize(nike_df, record_path="summaries", record_prefix="summaries.", meta="id")
-        summaries = summaries[summaries['summaries.metric'] == "distance"]
-        nike_df = pd.merge(nike_df, summaries, how='inner', on='id')
+    def add_nike_data_to_activities(self):
 
-        # set 5 key metrics
-        # note we're using the enum value
-        nike_df['source'] = ActivitySource.NIKE.value
-        nike_df['activity_type'] = ActivityType.RUN.value
-        nike_df['start_timestamp'] = nike_df['start_epoch_ms'].apply(lambda x: datetime.fromtimestamp(x / 1000, pytz.timezone('America/Vancouver')))
-        nike_df['distance_in_km'] = nike_df['summaries.value']
-        nike_df['duration_in_min'] = nike_df['active_duration_ms'].apply(lambda x: x / 1000 / 60)
+        try:
+            logging.info("Parsing Nike data and getting it ready for analysis.")
 
-        #  filter out extraneous columns
-        nike_df = nike_df.filter(self.data_frame_columns)
+            nike_activities = self.nike_fetcher.fetch_nike_activities()
+            if nike_activities == None:
+                logging.info("No Nike data to add to all activities.")
+                return
+            
+            # load Nike data, normalize the nested JSON
+            nike_df = json_normalize(nike_activities)
 
-        #  add to activities
-        self.all_activities = self.all_activities.append(nike_df, sort=True, ignore_index=True)
+            # merge in normalized summaries, joining by id
+            summaries = json_normalize(self.nike_fetcher.fetch_nike_activities(), record_path="summaries", record_prefix="summaries.", meta="id")
+            summaries = summaries[summaries['summaries.metric'] == "distance"]
+            nike_df = pd.merge(nike_df, summaries, how='inner', on='id')
+
+            # set 5 key metrics
+            # note we're using the enum value
+            nike_df['source'] = ActivitySource.NIKE.value
+            nike_df['activity_type'] = ActivityType.RUN.value
+            nike_df['start_timestamp'] = nike_df['start_epoch_ms'].apply(lambda x: datetime.fromtimestamp(x / 1000, pytz.timezone('America/Vancouver')))
+            nike_df['distance_in_km'] = nike_df['summaries.value']
+            nike_df['duration_in_min'] = nike_df['active_duration_ms'].apply(lambda x: x / 1000 / 60)
+
+            #  filter out extraneous columns
+            nike_df = nike_df.filter(self.data_frame_columns)
+
+            #  add to activities
+            self.all_activities = self.all_activities.append(nike_df, sort=True, ignore_index=True)
+
+            logging.info("Done parsing Nike data.")
+        except Exception:
+            logging.exception("Could not parse Nike data")
 
     def add_apple_data_to_activities(self):
 
-        # apple data is loaded from csv rather than from json
-        apple_data = self.load_apple_workouts()
+        try:
+            # apple data is loaded from csv rather than from json
+            apple_data = self.load_apple_workouts()
 
-        #  filter out nike and strava data that has synced to apple, we are getting that from json source
-        apple_data = apple_data[(apple_data.sourceName != "Nike Run Club") & (apple_data.sourceName != "Strava")]
+            #  filter out nike and strava data that has synced to apple, we are getting that from json source
+            apple_data = apple_data[(apple_data.sourceName != "Nike Run Club") & (apple_data.sourceName != "Strava")]
 
-        # set up 5 key metrics
-        # note we're using enum values
-        apple_data['source'] = ActivitySource.APPLE.value
-        apple_data['activity_type'] = apple_data['workoutActivityType'].apply(lambda x: self.convert_apple_activity_type(x).value)
-        apple_data['distance_in_km'] = apple_data['totalDistance']
-        apple_data['duration_in_min'] = apple_data['duration']
-        apple_data['start_timestamp'] = apple_data['startDate'].apply(lambda x: parse(x, tzinfos={"America/Vancouver"}))
+            # set up 5 key metrics
+            # note we're using enum values
+            apple_data['source'] = ActivitySource.APPLE.value
+            apple_data['activity_type'] = apple_data['workoutActivityType'].apply(lambda x: self.convert_apple_activity_type(x).value)
+            apple_data['distance_in_km'] = apple_data['totalDistance']
+            apple_data['duration_in_min'] = apple_data['duration']
+            apple_data['start_timestamp'] = apple_data['startDate'].apply(lambda x: parse(x, tzinfos={"America/Vancouver"}))
 
-        #  filter out extraneous columns
-        apple_data = apple_data.filter(self.data_frame_columns)
-        self.all_activities = self.all_activities.append(apple_data, sort=True, ignore_index=True)
+            #  filter out extraneous columns
+            apple_data = apple_data.filter(self.data_frame_columns)
+            self.all_activities = self.all_activities.append(apple_data, sort=True, ignore_index=True)
+
+            logging.info("Done parsing Apple data.")
+        except Exception:
+            logging.exception("Could not parse Apple data")
 
     def load_apple_workouts(self):
         logging.info("Getting csv data for apple data")

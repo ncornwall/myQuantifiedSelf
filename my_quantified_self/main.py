@@ -37,30 +37,31 @@ def main():
         processor = RunDataProcessor()
         processor.add_strava_data_to_activities()
         processor.add_nike_data_to_activities()
-        # cleaner.add_apple_data_to_activities()
-        # cleaner.remove_duplicates()
+        processor.add_apple_data_to_activities()
+        processor.remove_duplicates()
 
-    #     df = cleaner.all_activities
+        df = processor.all_activities
 
-    #     # store the resulting frame as the previous steps can be slow
-    #     df.to_pickle('data/all_activities.pkl')
+        # store the resulting frame as the previous steps can be slow
+        logging.info("Successfully run the data pipeline! Storing results to a pickle file.")
+        df.to_pickle('data/all_activities.pkl')
 
     # # generate some insights
-    # analyzer = RunDataAnalyzer(df)
-    # analyzer.get_summary_stats_by_type_and_source()
-    # analyzer.get_running_stats()
+    analyzer = RunDataAnalyzer(df)
+    analyzer.get_summary_stats_by_type_and_source()
+    analyzer.get_running_stats()
 
-    # # make some fun charts
-    # visualizer = RunDataVisualizer(df)
-    # # visualizer.visualize_bikes_by_year()
-    # visualizer.visualize_runs_by_year_and_source()
+    # make some fun charts
+    visualizer = RunDataVisualizer(df)
+    # visualizer.visualize_bikes_by_year()
+    visualizer.visualize_runs_by_year_and_source()
     # visualizer.visualize_runs_by_year_and_source()
     # visualizer.visualize_min_per_km_by_year()
     # visualizer.visualize_runs_and_bikes_by_year()
     # visualizer.visualize_runs_by_month()
     # visualizer.visualize_runs_by_day_of_week()
     # visualizer.visualize_min_per_km_by_year()
-    # visualizer.visualize_runs_by_year_month()
+    visualizer.visualize_runs_by_year_month()
     # visualizer.visualize_min_per_km_by_year_month()
 
 if __name__ == "__main__":

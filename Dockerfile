@@ -4,10 +4,8 @@ WORKDIR /usr/src/app
 
 COPY requirements.txt ./
 COPY my_quantified_self ./
-
+COPY .env ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-
-CMD [ "python", "./your-daemon-or-script.py" ]
+CMD [ "python", "./my_quantified_self/main.py" ]
